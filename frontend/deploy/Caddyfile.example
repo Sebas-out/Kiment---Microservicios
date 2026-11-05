@@ -1,0 +1,24 @@
+{$KIMENTS_PUBLIC_HOST} {
+    encode zstd gzip
+    request_body {
+        max_size 3MB
+    }
+
+    @backend path /api/v1 /api/v1/* /actuator /actuator/*
+    respond @backend 404
+
+    reverse_proxy frontend:3000
+}
+
+# Solo red Docker. El puerto 8443 queda dentro del contenedor.
+https://auth-gateway:8443 {
+    tls internal
+
+    @svc09 path /api/v1/* /actuator/health
+    handle @svc09 {
+        reverse_proxy auth-service:8080
+    }
+    handle {
+        respond 404
+    }
+}

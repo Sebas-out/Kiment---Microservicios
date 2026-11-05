@@ -1,0 +1,64 @@
+services:
+  frontend:
+    image: "${FRONTEND_IMAGE:-kiments-frontend:1.2.0}"
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        KIMENTS_CSP_REPORT_ONLY: "${KIMENTS_CSP_REPORT_ONLY:-0}"
+    environment:
+      APP_ORIGIN: "${APP_ORIGIN:?Configura APP_ORIGIN con el origen publico HTTPS}"
+      AUTH_API_URL: "${AUTH_API_URL:-https://auth-gateway:8443}"
+      NODE_EXTRA_CA_CERTS: /etc/kiments/auth-root.crt
+    volumes:
+      - type: bind
+        source: "${KIMENTS_AUTH_CA_FILE:-./trust/auth-root.crt}"
+        target: /etc/kiments/auth-root.crt
+        read_only: true
+        bind:
+          create_host_path: false
+    expose:
+      - "3000"
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    cpus: 1.0
+    mem_limit: 1536m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: &rotated
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - kiments-internal
+
+  proxy:
+    image: "${CADDY_IMAGE:-caddy:2-alpine}"
+    environment:
+      KIMENTS_PUBLIC_HOST: "${KIMENTS_PUBLIC_HOST:?Configura el dominio publico real}"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.example:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    logging: *rotated
+    networks:
+      kiments-internal:
+        aliases:
+          - auth-gateway
+
+networks:
+  kiments-internal:
+    external: true
+    name: kiments-internal
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,40 @@
+{
+  "name": "kiments-frontend",
+  "version": "1.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:http": "node tests/http-smoke.mjs",
+    "test:users": "node tests/users-integration.mjs",
+    "test:branches": "node tests/branches-integration.mjs",
+    "test:account": "node tests/account-integration.mjs",
+    "test:fixture": "node tests/management-fixture.mjs --serve"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "latest",
+    "lucide-react": "latest",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-hook-form": "latest",
+    "recharts": "^3.10.1",
+    "server-only": "latest",
+    "sonner": "^2.0.8",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "16.4.3",
+    "tailwindcss": "latest",
+    "typescript": "latest"
+  }
+}

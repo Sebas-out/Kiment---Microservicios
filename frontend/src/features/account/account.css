@@ -1,0 +1,97 @@
+/* Mi cuenta: scoped to this route and its native dialog. */
+.ka-account,.ka-dialog { --ka-blue:#305fe1; --ka-ink:#101114; --ka-muted:#626b78; --ka-line:#e1e1e1; --ka-tint:#f4f4f4; --ka-soft:#eff4fd; --ka-shadow:0 1px 2px #10111418; color:var(--ka-ink); }
+:root[data-theme="dark"] :is(.ka-account,.ka-dialog) { --ka-blue:#3e69e6; --ka-ink:var(--admin-text); --ka-muted:var(--admin-muted); --ka-line:var(--admin-border); --ka-tint:var(--admin-canvas); --ka-soft:var(--admin-soft); --ka-shadow:0 1px 2px #0003; }
+
+.ka-account h2,.ka-dialog h2,.ka-dialog h3 { margin:0; font-weight:650; letter-spacing:-.03em; }
+.ka-account p,.ka-dialog p { margin:0; }
+.ka-hero,.ka-card { border:1px solid var(--ka-line); background:var(--admin-surface); border-radius:14px; box-shadow:var(--ka-shadow); min-width:0; }
+.ka-hero { position:relative; overflow:hidden; padding-bottom:24px; }
+.ka-cover { height:205px; background:linear-gradient(103deg,#173b94eb 0%,#224eae68 51%,#bdd0f7ed 100%),url("/images/store-02.jpg") center 46% / cover no-repeat; }
+.ka-identity { position:relative; margin:-45px 26px 0; padding:20px 24px; background:var(--admin-surface); border:1px solid var(--ka-line); border-radius:26px; box-shadow:0 12px 17px -10px #10111455; }
+.ka-badges,.ka-meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.ka-badges span,.ka-meta span { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--ka-line); border-radius:99px; padding:3px 10px; background:var(--ka-tint); max-width:100%; overflow-wrap:anywhere; }
+.ka-badges span { color:#2455cd; text-transform:uppercase; font-size:10px; font-weight:650; letter-spacing:.13em; }
+.ka-badges span+span { background:var(--ka-soft); border-color:#adc3fc; }
+:root[data-theme="dark"] .ka-badges span { color:#a9c1ff; }
+.ka-name { display:flex; align-items:center; gap:14px; margin-top:12px; }
+.ka-name h2 { font-size:clamp(24px,2.15vw,34px); line-height:1.13; overflow-wrap:anywhere; }
+.ka-avatar { position:relative; display:grid; place-items:center; flex:none; width:58px; height:58px; overflow:hidden; border-radius:50%; border:1px solid var(--ka-line); background:var(--ka-soft); color:#315ec7; font-weight:650; box-shadow:var(--ka-shadow); font-size:16px; }
+.ka-avatar img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.ka-hero-footer { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
+.ka-meta { margin-top:12px; font-size:10px; color:var(--ka-muted); }
+.ka-meta svg { flex:none; }
+.ka-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:7px 12px; min-height:32px; font-size:12px; line-height:1.2; font-weight:550; border:1px solid var(--ka-line); border-radius:8px; box-shadow:var(--ka-shadow); background:var(--admin-surface); color:var(--ka-ink); white-space:nowrap; cursor:pointer; }
+.ka-button:hover:not(:disabled) { background:var(--ka-tint); }
+.ka-button:focus-visible,.ka-tabs button:focus-visible,.ka-close:focus-visible,.ka-password-field button:focus-visible { outline:2px solid var(--admin-blue); outline-offset:2px; }
+.ka-button:disabled,.ka-close:disabled { opacity:.5; cursor:not-allowed; }
+.ka-pill { border-radius:99px; }
+.ka-primary,.ka-primary:hover:not(:disabled) { background:var(--ka-blue); color:#fff; border-color:transparent; box-shadow:none; }
+.ka-primary:hover:not(:disabled) { background:#234ec6; }
+.ka-tabs { display:grid; grid-template-columns:1fr 1fr; width:min(360px,100%); border-radius:99px; margin:19px auto 13px; padding:2px; background:var(--ka-tint); }
+.ka-tabs button { display:flex; align-items:center; justify-content:center; gap:6px; min-height:27px; border-radius:9px; border:1px solid transparent; background:transparent; color:var(--ka-muted); font-size:12px; cursor:pointer; }
+.ka-tabs button[aria-selected="true"] { background:var(--admin-surface); color:var(--ka-ink); border-color:var(--ka-line); box-shadow:var(--ka-shadow); }
+.ka-overview { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:20px; }
+.ka-card { padding:20px; }
+.ka-card h2 { font-size:15px; }
+.ka-card > p,.ka-photo-note p,.ka-status p { color:var(--ka-muted); font-size:12px; line-height:1.55; margin-top:3px; }
+.ka-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0; }
+.ka-field { display:flex; align-items:center; gap:10px; min-width:0; min-height:64px; padding:11px 13px; border:1px solid var(--ka-line); border-radius:18px; box-shadow:var(--ka-shadow); }
+.ka-field-icon,.ka-picker-icon { display:grid; place-items:center; flex:none; width:30px; height:30px; border-radius:50%; background:var(--ka-tint); color:var(--admin-blue); }
+.ka-account dt { text-transform:uppercase; font-size:10px; font-weight:650; color:var(--ka-muted); letter-spacing:.13em; }
+.ka-account dd { margin:6px 0 0; font-size:12px; overflow-wrap:anywhere; }
+.ka-photo-note { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px; border:1px dashed var(--ka-line); border-radius:17px; background:var(--ka-tint); }
+.ka-photo-note strong { font-size:12px; }
+.ka-status { padding:16px; margin-top:16px; border:1px solid var(--ka-line); border-radius:23px; background:linear-gradient(150deg,var(--ka-soft),var(--admin-surface)); }
+.ka-status dl { display:grid; gap:10px; margin:0 0 14px; }
+.ka-status dl div { background:var(--admin-surface); padding:12px; border:1px solid var(--ka-line); border-radius:15px; }
+.ka-status dd { font-size:15px; font-weight:650; }
+.ka-status p { display:flex; align-items:center; gap:8px; margin-top:7px; }
+.ka-status svg { flex:none; }
+.ka-security form { display:grid; gap:14px; margin-top:15px; }
+.ka-security form > button { justify-self:start; }
+.ka-password-field label { display:block; color:var(--ka-muted); text-transform:uppercase; letter-spacing:.05em; font-size:10px; font-weight:650; margin-bottom:5px; }
+.ka-password-field > div { position:relative; }
+.ka-password-field input { width:100%; min-height:34px; border:1px solid var(--ka-line); border-radius:8px; color:var(--ka-ink); background:var(--admin-surface); padding:6px 36px 6px 10px; font-size:12px; box-shadow:var(--ka-shadow); }
+.ka-password-field input:focus { outline:2px solid #7b93c6; outline-offset:1px; }
+.ka-password-field button { display:grid; place-items:center; position:absolute; top:0; right:0; width:36px; height:100%; background:none; border:0; color:var(--ka-muted); cursor:pointer; }
+
+.ka-dialog { box-sizing:border-box; position:fixed; inset:0; margin:auto; padding:0; width:min(460px,calc(100vw - 28px)); max-height:calc(100dvh - 28px); border:1px solid var(--ka-line); background:var(--admin-surface); border-radius:24px; box-shadow:0 20px 56px #0003; }
+.ka-dialog[open] { display:flex; flex-direction:column; }
+.ka-dialog::backdrop { background:#0008; }
+.ka-dialog-heading { display:flex; justify-content:space-between; align-items:flex-start; flex:none; gap:10px; padding:18px 19px 13px; border-bottom:1px solid var(--ka-line); }
+.ka-dialog-heading h2 { font-size:18px; }
+.ka-dialog-heading p,.ka-picker p { color:var(--ka-muted); margin-top:5px; font-size:12px; line-height:1.4; }
+.ka-close { display:grid; place-items:center; background:none; color:var(--ka-muted); border:0; border-radius:6px; padding:3px; cursor:pointer; }
+.ka-dialog-body { padding:16px 19px 18px; overflow:auto; overscroll-behavior:contain; }
+.ka-photo-banner { display:grid; grid-template-columns:105px minmax(0,1fr); align-items:center; gap:15px; padding:15px; color:#fff; border:1px solid #adc3fc; border-radius:20px; background:linear-gradient(132deg,#203e91,#6b8bca 49%,#d5e3ff); box-shadow:0 11px 16px -10px #15244066; }
+.ka-preview-frame { display:grid; place-items:center; width:105px; height:105px; border-radius:23px; background:#ffffff21; box-shadow:0 6px 12px #15244026; }
+.ka-avatar-preview { width:90px; height:90px; background:#fff1; color:#fff; border-color:#ffffff40; font-size:26px; box-shadow:none; }
+.ka-photo-banner h3 { font-size:21px; }
+.ka-photo-banner p { margin:5px 0 10px; font-size:12px; line-height:1.36; font-weight:550; }
+.ka-photo-banner div > span:not(.ka-avatar) { display:inline-block; border-radius:99px; background:#1b347b70; border:1px solid #ffffff40; padding:3px 9px; font-size:10px; }
+.ka-picker { margin-top:19px; padding:19px 10px; text-align:center; border:1px dashed var(--ka-line); border-radius:18px; }
+.ka-picker-icon { margin:0 auto 11px; width:38px; height:38px; border-radius:15px; }
+.ka-picker h3 { font-size:16px; }
+.ka-picker p { overflow-wrap:anywhere; }
+.ka-picker .ka-button { margin-top:12px; }
+.ka-dialog-actions { display:flex; flex:none; justify-content:space-between; gap:7px; padding:12px 19px; border-top:1px solid var(--ka-line); }
+.ka-dialog-actions > div { display:flex; gap:6px; margin-left:auto; }
+.ka-danger,.ka-danger:hover:not(:disabled) { color:#fff; background:#b91c36; }
+.ka-error { color:#b91c36; font-size:12px; }
+:root[data-theme="dark"] .ka-error { color:#ff9ca8; }
+.ka-dialog-error { padding:4px 19px 10px; }
+@media (max-width:1150px) { .ka-overview { grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px; } }
+@media (max-width:960px) { .ka-overview { grid-template-columns:1fr; } }
+@media (max-width:600px) {
+  .ka-hero { padding-bottom:12px; }
+  .ka-cover { height:143px; }
+  .ka-identity { margin:-32px 10px 0; padding:14px; border-radius:20px; }
+  .ka-hero-footer,.ka-photo-note { align-items:flex-start; flex-direction:column; }
+  .ka-card { padding:15px; }
+  .ka-fields { grid-template-columns:1fr; gap:8px; }
+  .ka-dialog { margin:auto auto 0; width:100%; max-width:100%; max-height:calc(100dvh - 18px); border-radius:24px 24px 0 0; }
+  .ka-dialog-actions { flex-wrap:wrap; padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+  .ka-photo-banner { grid-template-columns:82px minmax(0,1fr); gap:11px; padding:12px; }
+  .ka-preview-frame { width:82px; height:82px; }
+  .ka-avatar-preview { width:70px; height:70px; }
+}
