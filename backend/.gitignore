@@ -10,3 +10,6 @@ target/
 *.key
 secrets/
 storage/
+
+# Respaldos de bases de datos
+/backups/
