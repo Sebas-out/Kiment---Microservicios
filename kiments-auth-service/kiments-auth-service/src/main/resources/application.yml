@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: kiments-auth-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kiments_db}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.default_schema: auth
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    default-schema: auth
+    schemas: auth
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: none
+  error:
+    include-message: never
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:false}
+  swagger-ui:
+    enabled: ${OPENAPI_ENABLED:false}
+app:
+  jwt:
+    issuer: ${JWT_ISSUER:http://localhost:8080}
+    audience: ${JWT_AUDIENCE:kiments-api}
+    public-key: ${JWT_PUBLIC_KEY}
+    private-key: ${JWT_PRIVATE_KEY}
+    key-id: ${JWT_KEY_ID:kiments-rsa-1}
+    access-ttl: PT15M
+  refresh-ttl: P7D
+  storage:
+    profiles:
+      path: ${PROFILE_STORAGE_PATH:storage/profiles}
+  cors-origins: ${CORS_ORIGINS:}
+  bootstrap:
+    enabled: false # opción antigua: si se fuerza true, se rechaza
+    admin:
+      enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:false}
+      manual-enabled: ${APP_BOOTSTRAP_ADMIN_MANUAL_ENABLED:false}
