@@ -1,0 +1,44 @@
+# ==============================================================================
+# KIMENTS POS — Configuracion de Referencia Caddy (HTTPS Automatico)
+# ==============================================================================
+
+pos.kiments.com {
+    # Certificado TLS automatico gestionado por Let's Encrypt / ZeroSSL
+    encode zstd gzip
+
+    # Cabeceras de seguridad
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+
+    # Proteger Actuator del exterior
+    @actuator path /actuator/*
+    handle @actuator {
+        # Responder 403 Forbidden a clientes externos
+        abort
+    }
+
+    # Rutas API de SVC-09
+    @api path /api/v1/*
+    handle @api {
+        reverse_proxy auth-service:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Todo lo demas va al Frontend Next.js
+    handle {
+        reverse_proxy frontend:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}

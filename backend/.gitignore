@@ -1,0 +1,15 @@
+target/
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+*.iml
+*.log
+*.pem
+*.key
+secrets/
+storage/
+
+# Respaldos de bases de datos
+/backups/
