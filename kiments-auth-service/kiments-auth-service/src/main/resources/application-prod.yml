@@ -1,0 +1,6 @@
+app:
+  jwt:
+    issuer: ${JWT_ISSUER}
+    audience: ${JWT_AUDIENCE}
+server:
+  shutdown: graceful

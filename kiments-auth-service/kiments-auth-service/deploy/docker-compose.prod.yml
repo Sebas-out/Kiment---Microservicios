@@ -1,0 +1,130 @@
+# ==============================================================================
+# KIMENTS POS — Despliegue de Produccion en Azure VM (Docker Compose)
+# Servicios: SVC-09 (kiments-auth-service) + PostgreSQL 17
+# Arquitectura: Red privada interna sin exposicion directa de puertos a Internet
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Base de Datos PostgreSQL 17 (Aislada e Independiente)
+  # ----------------------------------------------------------------------------
+  postgres:
+    container_name: kiments-postgres
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kiments_db}
+      POSTGRES_USER: ${POSTGRES_USER:-kiments_auth}
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Error: Variable POSTGRES_PASSWORD requerida}"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 2048M
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - kiments-internal
+
+  # ----------------------------------------------------------------------------
+  # Backend SVC-09: kiments-auth-service (Spring Boot 3.5.16 / Java 21)
+  # ----------------------------------------------------------------------------
+  auth-service:
+    container_name: kiments-auth-service
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: kiments-auth-service:0.1.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Perfil de produccion de Spring Boot
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Conexion a PostgreSQL en red interna
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-kiments_db}
+      DB_USERNAME: ${POSTGRES_USER:-kiments_auth}
+      DB_PASSWORD: "${POSTGRES_PASSWORD:?Error: Variable POSTGRES_PASSWORD requerida}"
+
+      # Parametros JWT RS256
+      JWT_ISSUER: "${JWT_ISSUER:?Error: Variable JWT_ISSUER requerida}"
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-kiments-api}
+      JWT_KEY_ID: ${JWT_KEY_ID:-kiments-rsa-1}
+      JWT_PRIVATE_KEY: file:/app/keys/private.pem
+      JWT_PUBLIC_KEY: file:/app/keys/public.pem
+
+      # Almacenamiento persistente de fotografias de perfil
+      PROFILE_STORAGE_PATH: /app/storage/profiles
+
+      # Politica de CORS (vacio si el acceso es solo BFF servidor a servidor)
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+
+      # Puerto interno y configuracion de servidor
+      PORT: 8080
+
+      # Bootstrap administrativo estrictamente desactivado en produccion
+      APP_BOOTSTRAP_ADMIN_ENABLED: "false"
+      APP_BOOTSTRAP_ADMIN_MANUAL_ENABLED: "false"
+    volumes:
+      # Volumen persistente para fotografias de perfil
+      - profiles_data:/app/storage/profiles
+      # Claves RSA montadas en modo solo lectura (:ro)
+      - ./secrets/private.pem:/app/keys/private.pem:ro
+      - ./secrets/public.pem:/app/keys/public.pem:ro
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f -s http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1536M
+        reservations:
+          memory: 768M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - kiments-internal
+
+# ------------------------------------------------------------------------------
+# Volúmenes Persistentes
+# ------------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: kiments_postgres_data
+  profiles_data:
+    name: kiments_profiles_data
+
+# ------------------------------------------------------------------------------
+# Red Privada Interna (Aislamiento de Microservicios)
+# ------------------------------------------------------------------------------
+networks:
+  kiments-internal:
+    name: kiments-internal
+    driver: bridge

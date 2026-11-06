@@ -1,0 +1,16 @@
+target/
+.git/
+.mvn/
+*.log
+storage/
+backups/
+deploy/secrets/
+secrets/
+*.pem
+*.key
+*.sql
+.env*
+.idea/
+.vscode/
+*.iml
+scratch/
