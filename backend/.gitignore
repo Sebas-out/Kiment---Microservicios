@@ -9,7 +9,7 @@ target/
 *.pem
 *.key
 secrets/
-storage/
+/storage/
 
 # Respaldos de bases de datos
 /backups/
