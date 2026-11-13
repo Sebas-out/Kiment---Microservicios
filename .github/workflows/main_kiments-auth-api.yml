@@ -17,7 +17,7 @@ jobs:
     env:
       ACR_NAME: ${{ vars.ACR_NAME }}
       AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-      APP_NAME: kiments-auth-api
+      APP_NAME: kiments-auth-aca
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -37,7 +37,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BF4D988F5DAF436BB949696B87CD1B0B }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7A4BD622393745D1A68FDF76166D6881 }}
 
-      - name: Publicar la imagen y actualizar App Service
+      - name: Publicar la imagen y actualizar Container Apps
         run: |
           registry="$(az acr show --name "$ACR_NAME" --query loginServer --output tsv)"
           : "${registry:?Azure no devolvió el servidor del registro}"
@@ -47,16 +47,9 @@ jobs:
           docker tag "kiments-auth-service:$GITHUB_SHA" "$image"
           docker push "$image"
 
-          az webapp config set \
+          az containerapp update \
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --name "$APP_NAME" \
-            --linux-fx-version "DOCKER|$image" \
-            --acr-use-identity true \
-            --acr-identity '[system]' \
-            --output none
-
-          az webapp config show \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --name "$APP_NAME" \
-            --query linuxFxVersion \
+            --image "$image" \
+            --query properties.latestRevisionName \
             --output tsv
