@@ -8,7 +8,7 @@ import { canReadUsers, type AuthProfile, type Role } from "../auth/contracts";
 type Permission = "SALE_CREATE" | "QUOTATION_CREATE" | "CUSTOMER_READ" | "INVOICE_READ" |
   "PRODUCT_READ" | "CATEGORY_WRITE" | "VARIANT_WRITE" | "STOCK_READ" | "MOVEMENT_READ" | "REPORT_READ" | "STOCK_REPORT_READ" | "USER_READ" | "BRANCH_READ";
 export type NavigationItem = {
-  id: string; label: string; icon: LucideIcon; href?: "/dashboard" | "/usuarios" | "/sucursales" | "/mi-cuenta";
+  id: string; label: string; icon: LucideIcon; href?: "/dashboard" | "/usuarios" | "/sucursales" | "/mi-cuenta" | "/productos" | "/categorias" | "/tallas" | "/colores" | "/movimientos" | "/traspasos";
   permission?: Permission; anyPermission?: readonly Permission[]; roles?: readonly Role[];
 };
 export type NavigationGroup = { id: string; label: string; items: readonly NavigationItem[] };
@@ -29,14 +29,14 @@ export const navigation: readonly NavigationGroup[] = [
     { id: "comprobantes", label: "Comprobantes", icon: Files, permission: "INVOICE_READ" },
   ] },
   { id: "catalogo", label: "Catálogo", items: [
-    { id: "productos", label: "Productos", icon: Package, permission: "PRODUCT_READ" },
-    { id: "categorias", label: "Categorías", icon: Layers3, permission: "CATEGORY_WRITE" },
-    { id: "tallas", label: "Tallas", icon: Tag, permission: "VARIANT_WRITE" },
-    { id: "colores", label: "Colores", icon: Palette, permission: "VARIANT_WRITE" },
+    { id: "productos", label: "Productos", icon: Package, href: "/productos", permission: "PRODUCT_READ" },
+    { id: "categorias", label: "Categorías", icon: Layers3, href: "/categorias", anyPermission: ["PRODUCT_READ", "CATEGORY_WRITE"] },
+    { id: "tallas", label: "Tallas", icon: Tag, href: "/tallas", anyPermission: ["PRODUCT_READ", "VARIANT_WRITE"] },
+    { id: "colores", label: "Colores", icon: Palette, href: "/colores", anyPermission: ["PRODUCT_READ", "VARIANT_WRITE"] },
   ] },
-  { id: "inventario", label: "Inventario", items: [
-    { id: "stock", label: "Stock", icon: Boxes, permission: "STOCK_READ" },
-    { id: "movimientos", label: "Movimientos", icon: ArrowLeftRight, permission: "MOVEMENT_READ" },
+  { id: "inventario", label: "Stock", items: [
+    { id: "movimientos", label: "Movimientos", icon: Boxes, href: "/movimientos", anyPermission: ["MOVEMENT_READ", "STOCK_READ"] },
+    { id: "traspasos", label: "Traspasos", icon: ArrowLeftRight, href: "/traspasos", permission: "STOCK_READ" },
   ] },
   { id: "reportes", label: "Reportes", items: [
     { id: "reportes", label: "Reportes", icon: ChartNoAxesCombined, anyPermission: ["REPORT_READ", "STOCK_REPORT_READ"] },

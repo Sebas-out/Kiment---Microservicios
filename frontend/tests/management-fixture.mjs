@@ -9,7 +9,7 @@ export async function startFixture() {
   const branchIds=['521c9f1d-624d-4fe5-8c70-9b43396059b2','621c9f1d-624d-4fe5-8c70-9b43396059b2','721c9f1d-624d-4fe5-8c70-9b43396059b2'];
   const timestamp='2026-11-04T17:00:00Z';
   const branches=branchIds.map((id,i)=>({id,code:`LOCAL-0${i+1}`,name:['Sucursal Centro (mock)','Sucursal Norte (mock)','Sucursal Sur (mock)'][i],address:['Av. Central 100','Calle Norte 200','Av. Sur 300'][i],phone:'010000000',city:i===0?'Lima':null,ubigeo:i===0?'010101':null,email:i===0?'local@example.invalid':null,branchType:[null,'VENTA','ALMACEN'][i],sunatCode:i===0?'0001':null,enabled:i!==2,createdAt:timestamp,updatedAt:timestamp}));
-  const permissions=['USER_READ','USER_CREATE','USER_UPDATE','USER_ROLE_CHANGE','USER_DISABLE','BRANCH_READ','BRANCH_CREATE','BRANCH_UPDATE','BRANCH_DISABLE','PRODUCT_READ','STOCK_READ','SALE_CREATE'];
+  const permissions=['USER_READ','USER_CREATE','USER_UPDATE','USER_ROLE_CHANGE','USER_DISABLE','BRANCH_READ','BRANCH_CREATE','BRANCH_UPDATE','BRANCH_DISABLE','PRODUCT_READ','CATEGORY_WRITE','VARIANT_WRITE','STOCK_READ','SALE_CREATE'];
   const roles=['ADMIN','VENTAS','ALMACEN','VENTAS_ALMACEN'].map((code,i)=>({id:i+1,code,name:code,description:['Administración de usuarios y sucursales.','Acceso al punto de venta.','Operaciones de almacén.','Operaciones de ventas y almacén.'][i]}));
   const users=[{id:actorId,firstName:'Pruebas',lastName:'Aisladas',dni:'00000001',phone:null,email:'qa@example.invalid',role:'ADMIN',enabled:true,branchId:null,createdAt:timestamp,updatedAt:timestamp,lastLoginAt:null},{id:targetId,firstName:'Personal',lastName:'Operativo',dni:'00000002',phone:'010000000',email:'staff@example.invalid',role:'VENTAS',enabled:true,branchId:branchIds[0],createdAt:timestamp,updatedAt:timestamp,lastLoginAt:null}];
   let writes=0;
@@ -68,7 +68,7 @@ export async function startFixture() {
     if(url.pathname==='/api/v1/auth/logout') {res.writeHead(204);return res.end();}
     if(url.pathname==='/api/v1/roles')return send(200,roles);
     const rolePermissions=url.pathname.match(/^\/api\/v1\/roles\/(\d+)\/permissions$/);
-    if(rolePermissions)return send(200,(rolePermissions[1]==='1'?permissions:['PRODUCT_READ','STOCK_READ',...(rolePermissions[1]==='2'?['SALE_CREATE']:[])]).map(code=>({code,description:({USER_READ:'Consultar usuarios',USER_CREATE:'Crear usuarios',USER_UPDATE:'Editar usuarios',USER_ROLE_CHANGE:'Cambiar roles',USER_DISABLE:'Activar y desactivar usuarios',BRANCH_READ:'Consultar sucursales',BRANCH_CREATE:'Crear sucursales',BRANCH_UPDATE:'Editar sucursales',BRANCH_DISABLE:'Activar y desactivar sucursales',PRODUCT_READ:'Consultar productos',STOCK_READ:'Consultar existencias',SALE_CREATE:'Registrar ventas'})[code]})));
+    if(rolePermissions)return send(200,(rolePermissions[1]==='1'?permissions:['PRODUCT_READ','STOCK_READ',...(rolePermissions[1]==='2'?['SALE_CREATE']:[])]).map(code=>({code,description:({USER_READ:'Consultar usuarios',USER_CREATE:'Crear usuarios',USER_UPDATE:'Editar usuarios',USER_ROLE_CHANGE:'Cambiar roles',USER_DISABLE:'Activar y desactivar usuarios',BRANCH_READ:'Consultar sucursales',BRANCH_CREATE:'Crear sucursales',BRANCH_UPDATE:'Editar sucursales',BRANCH_DISABLE:'Activar y desactivar sucursales',PRODUCT_READ:'Consultar productos',CATEGORY_WRITE:'Gestionar categorías',VARIANT_WRITE:'Gestionar tallas y colores',STOCK_READ:'Consultar existencias',SALE_CREATE:'Registrar ventas'})[code]})));
     function page(items){const page=Number(url.searchParams.get('page')??0),size=Number(url.searchParams.get('size')??20);return{content:items.slice(page*size,(page+1)*size),page,size,totalElements:items.length,totalPages:Math.ceil(items.length/size)};}
     if(url.pathname==='/api/v1/branches') {
       if(req.method==='GET')return send(200,page(branches.filter(b=>(!url.searchParams.has('name')||b.name.toLowerCase().includes(url.searchParams.get('name').toLowerCase()))&&(!url.searchParams.has('enabled')||String(b.enabled)===url.searchParams.get('enabled'))&&(!url.searchParams.has('type')||b.branchType===url.searchParams.get('type'))&&(!url.searchParams.has('city')||(b.city??'').toLowerCase().includes(url.searchParams.get('city').toLowerCase()))&&(!url.searchParams.has('code')||b.code===url.searchParams.get('code'))&&(!url.searchParams.has('sunatCode')||b.sunatCode===url.searchParams.get('sunatCode')))));
@@ -102,7 +102,9 @@ export async function startFixture() {
   const probe=createServer();probe.listen(0,'127.0.0.1');await once(probe,'listening');const port=probe.address().port;await new Promise(r=>probe.close(r));
   // Separate host from the real localhost session so browser cookies cannot collide.
   const origin=`http://127.0.0.1:${port}`;
-  const server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p',String(port)],{cwd:process.cwd(),env:{...process.env,APP_ORIGIN:origin,AUTH_API_URL:`http://127.0.0.1:${upstream.address().port}`},stdio:['ignore','pipe','pipe']});
+  const preview=process.argv.includes('--dev');
+  const mode=preview?['dev','--webpack','--hostname','127.0.0.1']:['start'];
+  const server=spawn(process.execPath,['node_modules/next/dist/bin/next',...mode,'-p',String(port)],{cwd:process.cwd(),env:{...process.env,KIMENTS_FIXTURE_PREVIEW:preview?'1':'0',APP_ORIGIN:origin,AUTH_API_URL:`http://127.0.0.1:${upstream.address().port}`},stdio:['ignore','pipe','pipe']});
   server.stdout.on('data',()=>{});server.stderr.on('data',()=>{});
   let ready=false;for(let i=0;i<120;i++){if(server.exitCode!==null)break;try{await fetch(origin);ready=true;break;}catch{await new Promise(r=>setTimeout(r,200));}}
   const stop=()=>{server.kill();upstream.close();};
