@@ -25,7 +25,7 @@ jobs:
       APP_NAME: kiments-catalog-aca
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
           persist-credentials: false
@@ -53,7 +53,7 @@ jobs:
             "$BUILD_CTX"
 
       - name: Iniciar sesión en Azure con OIDC
-        uses: azure/login@a641126d1b8aa4d1fa005f4f92df4a3a4c4c906 # v3.1.0
+        uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D13F4267B6D74B03B26C53FE92C3E115 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BF4D988F5DAF436BB949696B87CD1B0B }}
