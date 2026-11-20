@@ -9,4 +9,4 @@ target/
 *.pem
 *.key
 secrets/
-storage/
+/storage/
