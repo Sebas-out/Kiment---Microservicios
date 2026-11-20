@@ -1,0 +1,42 @@
+services:
+  catalog-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kiments-catalog-inventory-service
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: kiments_db
+      DB_USER: kiments_catalog
+      DB_PASSWORD: catalog_secret_password
+      AUTH_JWKS_URI: http://auth-service:8080/api/v1/auth/jwks
+      AUTH_ISSUER: https://kiments-auth-service
+      AUTH_AUDIENCE: kiments-auth
+      AUTH_ME_URI: http://auth-service:8080/api/v1/auth/me
+      AUTH_VALIDATE_SESSION_REMOTELY: "false"
+      STORAGE_LOCAL_DIR: /app/storage
+      CORS_ORIGINS: http://localhost:3000
+    volumes:
+      - catalog_storage:/app/storage
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17.11-alpine
+    container_name: kiments-catalog-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: kiments_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  catalog_storage:
+  postgres_data:
