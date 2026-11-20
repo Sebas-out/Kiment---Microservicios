@@ -1,5 +1,6 @@
 "use client";
 
+import { allRecords, catalogRequest } from "./catalog-api";
 import { Pagination } from "@/components/admin/pagination";
 import { Printer, Check } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -29,13 +30,22 @@ function ean13(code: string) {
 }
 
 export function BarcodeDialog({ rows, onClose }: { rows: Label[]; onClose: () => void }) {
+  const [codes, setCodes] = useState<Label[]>();
+  const [loadError, setLoadError] = useState("");
+  useEffect(() => {
+    let active = true;
+    allRecords<{ productName: string; colorName: string; sizeName: string; sku: string; barcode: string; price: number }>("products/barcode-data")
+      .then(data => { if (active) setCodes(data.filter(item => rows.some(row => row.sku === item.sku)).map(item => ({ name: item.productName, color: item.colorName, size: item.sizeName, sku: item.sku, barcode: item.barcode, price: String(item.price), wholesale: "" }))); })
+      .catch(error => { if (active) setLoadError(error.message); });
+    return () => { active = false; };
+  }, [rows]);
   const [page, setPage] = useState(1);
   const [format, setFormat] = useState("a4");
   const [printSelection, setPrintSelection] = useState(false);
   const [query, setQuery] = useState("");
   const [selecting, setSelecting] = useState(false);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const shown = rows.filter(row => row.barcode && [row.name, row.sku, row.barcode].some(value => value.toLowerCase().includes(query.trim().toLowerCase())));
+  const shown = (codes ?? []).filter(row => row.barcode && [row.name, row.sku, row.barcode].some(value => value.toLowerCase().includes(query.trim().toLowerCase())));
   const printable = shown.filter(row => ean13(row.barcode));
   const pages = Math.max(1, Math.ceil(shown.length / 10));
   const currentPage = Math.min(page, pages);
@@ -71,7 +81,8 @@ export function BarcodeDialog({ rows, onClose }: { rows: Label[]; onClose: () =>
         </label>
       </div>
     </div>
-    {!shown.length && <p className="kp-muted">No hay códigos que coincidan con la búsqueda.</p>}
+    {loadError && <p role="alert">{loadError}</p>}
+    {!shown.length && <p className="kp-muted">{!codes && !loadError ? "Cargando códigos…" : "No hay códigos que coincidan con la búsqueda."}</p>}
     <div className="kp-label-grid">{shown.slice((currentPage - 1) * 10, currentPage * 10).map(row => <div className="kp-card kp-label-card" data-selected={selecting && (counts[row.barcode] ?? 0) > 0} key={row.barcode}>
       {selecting && ean13(row.barcode) && <button className="kp-label-select" aria-label={"Seleccionar " + row.sku} aria-pressed={(counts[row.barcode] ?? 0) > 0} onClick={() => changeCount(row.barcode, counts[row.barcode] ? 0 : 1)}><Check size={13} /></button>}
       {label(row)}
@@ -86,28 +97,33 @@ export function BarcodeDialog({ rows, onClose }: { rows: Label[]; onClose: () =>
   </ProductDialog>;
 }
 
-export function exportProducts(rows: Label[], branches: { id: string; name: string }[]) {
-  const values = [["Producto", "Color", "Talla", "SKU", "Código de barras", "Precio", "Precio mayorista", ...branches.map(branch => branch.name)],
-    ...rows.map(row => [row.name, row.color, row.size, row.sku, row.barcode, row.price, row.wholesale, ...branches.map(branch => String(row.stock?.[branch.id] ?? 0))])];
-  const escape = (value: string) => value.replace(/[&<>]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[char]!);
-  const table = values.map(row => "<Row>" + row.map(value => '<Cell><Data ss:Type="String">' + escape(value) + "</Data></Cell>").join("") + "</Row>").join("");
-  const workbook = '<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Productos"><Table>' + table + "</Table></Worksheet></Workbook>";
-  const url = URL.createObjectURL(new Blob([workbook], { type: "application/xml" }));
+export async function exportProducts(branchId = "", query = "", available = false) {
+  const params = new URLSearchParams({ query, availableOnly: String(available) });
+  if (branchId) params.set("branchId", branchId);
+  const blob = await catalogRequest<Blob>("reports/inventory/export?" + params);
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "reporte-productos.xml";
+  link.download = "inventario.xlsx";
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function AnalyticsDialog({ rows, branches, products, onClose }: { rows: Label[]; branches: { id: string; name: string }[]; products: number; onClose: () => void }) {
+export function AnalyticsDialog({ rows, branches, products, branchId, onClose }: { branchId?: string; rows: Label[]; branches: { id: string; name: string }[]; products: number; onClose: () => void }) {
+  const [summary, setSummary] = useState<{ totalVariants: number; variantsWithStock: number; variantsOutOfStock: number; totalQuantity: number }>();
+  const [error, setError] = useState("");
+  useEffect(() => { let active = true; catalogRequest<typeof summary>("reports/inventory/summary" + (branchId ? "?branchId=" + encodeURIComponent(branchId) : "")).then(data => { if (active) setSummary(data); }).catch(error => { if (active) setError(error.message); }); return () => { active = false; }; }, [branchId]);
   return <ProductDialog title="Reporte analítico" onClose={onClose}>
+    {error && <p role="alert">{error}</p>}
+    <p className="kp-muted">{branchId ? "Existencias de la sucursal seleccionada" : "Existencias generales de productos activos"}</p>
     <dl className="kp-report-totals">
-      <div><dt>Productos</dt><dd>{products}</dd></div>
-      <div><dt>Variantes</dt><dd>{rows.length}</dd></div>
-      <div><dt>Variantes con stock</dt><dd>{rows.filter(row => branches.some(branch => (row.stock?.[branch.id] ?? 0) > 0)).length}</dd></div>
+      <div><dt>Productos filtrados</dt><dd>{products}</dd></div>
+      <div><dt>Variantes activas</dt><dd>{summary?.totalVariants ?? "—"}</dd></div>
+      <div><dt>Variantes con stock</dt><dd>{summary?.variantsWithStock ?? "—"}</dd></div>
+      <div><dt>Variantes sin stock</dt><dd>{summary?.variantsOutOfStock ?? "—"}</dd></div>
+      <div><dt>Total de unidades</dt><dd>{summary?.totalQuantity ?? "—"}</dd></div>
     </dl>
-    <h3>Unidades por sucursal</h3>
+    <h3>Unidades por sucursal según filtros del catálogo</h3>
     <ul>{branches.map(branch => <li key={branch.id}>{branch.name} · {rows.reduce((sum, row) => sum + (row.stock?.[branch.id] ?? 0), 0)} und.</li>)}</ul>
     {!branches.length && <p className="kp-muted">Sin sucursales disponibles.</p>}
   </ProductDialog>;

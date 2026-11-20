@@ -4,8 +4,9 @@ import { Pagination } from "@/components/admin/pagination";
 
 import { useEffect, useRef, useState } from "react";
 import { Layers3, Palette, Pencil, Plus, Search, Tag, Trash2, X } from "lucide-react";
-import { defaultColors, Swatch, type Attribute } from "./attribute-drawer";
-import { catalogKeyFor, commonSizes, defaultCategories, normalizeCatalog, readCatalog, visibleCatalog, type Kind } from "./catalog-store";
+import { Swatch, type Attribute } from "./attribute-drawer";
+import { normalizeCatalog, type Kind } from "./catalog-store";
+import { allRecords, catalogRequest, type AttributeRecord } from "./catalog-api";
 
 const labels = {
   categories: { single: "categoría", plural: "categorías", newLabel: "Nueva categoría", icon: Layers3 },
@@ -14,60 +15,37 @@ const labels = {
 };
 
 export function CatalogManager({ account, kind, canEdit }: { account: string; kind: Kind; canEdit: boolean }) {
-  const key = catalogKeyFor(account);
-  const [catalog, setCatalog] = useState<ReturnType<typeof readCatalog>>();
+  const [catalog, setCatalog] = useState<AttributeRecord[]>();
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [action, setAction] = useState<{ mode: "new" | "edit" | "delete"; item?: Attribute }>();
   const { single, plural, newLabel, icon: Icon } = labels[kind];
   useEffect(() => {
-    const timer = setTimeout(() => setCatalog(readCatalog(key)), 0);
-    const sync = (event: StorageEvent) => { if (event.key === key) setCatalog(readCatalog(key)); };
-    window.addEventListener("storage", sync);
-    return () => { clearTimeout(timer); window.removeEventListener("storage", sync); };
-  }, [key]);
-
-  const current = catalog ?? { colors: [], sizes: [], categories: [] };
-  const items = visibleCatalog(kind === "colors" ? [...defaultColors, ...current.colors]
-    : (kind === "sizes" ? [...commonSizes, ...current.sizes.map(item => item.name)] : [...defaultCategories, ...current.categories]).map(name => ({ name })), current, kind);
+    let active = true;
+    allRecords<AttributeRecord>(kind + "?enabled=true").then(data => { if (active) setCatalog(data); }).catch(error => { if (active) setLoadError(error.message); });
+    return () => { active = false; };
+  }, [kind, account]);
+  const current = { categoryDescriptions: Object.fromEntries((catalog ?? []).map(item => [item.name, item.description ?? ""])) };
+  const items = catalog ?? [];
   const filtered = items.filter(item => normalizeCatalog(item.name + " " + (item.hex ?? "") + " " + (current.categoryDescriptions?.[item.name] ?? "")).includes(normalizeCatalog(query)));
   const total = Math.max(1, Math.ceil(filtered.length / 10));
   const activePage = Math.min(page, total - 1);
 
-  function commit(name: string, description: string, hex: string) {
+  async function commit(name: string, description: string, hex: string) {
     if (!canEdit) return "No tienes permiso para editar este apartado.";
-    const latest = readCatalog(key);
-    const old = action?.item?.name;
-    const remove = action?.mode === "delete";
-    if (!remove && items.some(item => item.name !== old && normalizeCatalog(item.name) === normalizeCatalog(name))) return "Ya existe un registro con ese nombre.";
     try {
-      if (old && (remove || name !== old)) {
-        const drafts = JSON.parse(localStorage.getItem("kiments:product-drafts:" + account) ?? "[]") as { category: string; variants: { color: string; size: string }[] }[];
-        if (drafts.some(draft => kind === "categories" ? draft.category === old : draft.variants.some(row => (kind === "colors" ? row.color : row.size) === old))) {
-          return "Este registro está en uso. Retíralo primero de los productos que lo utilizan.";
-        }
-      }
-      const hidden = new Set(latest.hidden?.[kind]);
-      if (old && (remove || name !== old)) hidden.add(old);
-      if (!remove) hidden.delete(name);
-      latest.hidden = { ...latest.hidden, [kind]: [...hidden] };
-      if (kind === "categories") {
-        latest.categories = latest.categories.filter(item => item !== old);
-        const descriptions = { ...latest.categoryDescriptions };
-        if (old) delete descriptions[old];
-        if (!remove) { latest.categories.push(name); descriptions[name] = description; }
-        latest.categoryDescriptions = descriptions;
-      } else {
-        latest[kind] = latest[kind].filter(item => item.name !== old);
-        if (!remove) latest[kind].push({ name, ...(kind === "colors" ? { hex } : {}) });
-      }
-      localStorage.setItem(key, JSON.stringify(latest));
-      setCatalog(latest);
+      const item = catalog?.find(item => item.name === action?.item?.name);
+      const remove = action?.mode === "delete";
+      await catalogRequest(kind + (item ? "/" + item.id + (remove ? "/status" : "") : ""), remove ? "PATCH" : item ? "PUT" : "POST",
+        remove ? { enabled: false } : { name, ...(kind === "categories" ? { description } : kind === "colors" ? { hex } : {}) });
+      setCatalog(await allRecords<AttributeRecord>(kind + "?enabled=true"));
       setAction(undefined);
-    } catch { return "No se pudieron guardar los cambios en el navegador."; }
+    } catch (error) { return error instanceof Error ? error.message : "No se pudo guardar."; }
   }
 
   return <div className="kp kp-catalog">
+    {loadError && <p role="alert">{loadError}</p>}
     <div className="kp-toolbar">
       <label className="kp-search"><Search size={16} /><input aria-label={"Buscar " + single} placeholder={"Buscar " + single + "…"} value={query} onChange={event => { setQuery(event.target.value); setPage(0); }} /></label>
       {canEdit && <button type="button" className="kp-primary" disabled={!catalog} onClick={() => setAction({ mode: "new" })}><Plus size={16} />{newLabel}</button>}
@@ -86,7 +64,7 @@ export function CatalogManager({ account, kind, canEdit }: { account: string; ki
           </div></td>}
         </tr>)}</tbody>
       </table>
-      {(!catalog || !filtered.length) && <p className="kp-empty">{catalog ? "Sin resultados" : "Cargando catálogo…"}</p>}
+      {(!catalog || !filtered.length) && <p className="kp-empty">{catalog ? "Sin resultados" : loadError ? "No se pudo cargar el catálogo." : "Cargando catálogo…"}</p>}
     </div>
     <Pagination total={catalog ? filtered.length : 0} label={plural} page={activePage + 1} pages={total} disabled={!catalog} onChange={value => setPage(value - 1)} />
     {canEdit && action && <CatalogModal title={action.mode === "new" ? newLabel : (action.mode === "edit" ? "Editar " : "Eliminar ") + single}
@@ -97,13 +75,14 @@ export function CatalogManager({ account, kind, canEdit }: { account: string; ki
 
 function CatalogModal({ title, kind, mode, item, description, onClose, onSubmit }: {
   title: string; kind: Kind; mode: string; item?: Attribute; description: string; onClose: () => void;
-  onSubmit: (name: string, description: string, hex: string) => string | undefined;
+  onSubmit: (name: string, description: string, hex: string) => Promise<string | undefined>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState(item?.name ?? "");
   const [details, setDetails] = useState(description);
   const [hex, setHex] = useState(item?.hex ?? "#000000");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const remove = mode === "delete";
   useEffect(() => {
     const dialog = ref.current!;
@@ -113,9 +92,9 @@ function CatalogModal({ title, kind, mode, item, description, onClose, onSubmit 
   }, []);
   return <dialog ref={ref} className="kp kp-category-modal kp-attribute-modal" aria-labelledby="kp-catalog-title"
     onCancel={event => { event.preventDefault(); onClose(); }}>
-    <form onSubmit={event => { event.preventDefault(); setError(onSubmit(name.trim(), details.trim(), hex.toUpperCase()) ?? ""); }}>
+    <form onSubmit={async event => { event.preventDefault(); if (saving) return; setSaving(true); try { setError(await onSubmit(name.trim(), details.trim(), hex.toUpperCase()) ?? ""); } finally { setSaving(false); } }}>
       <header className="kp-between"><h2 id="kp-catalog-title">{title}</h2><button type="button" aria-label="Cerrar" onClick={onClose}><X size={16} /></button></header>
-      {remove ? <p>¿Eliminar «{item?.name}» del catálogo local?</p> : <>
+      {remove ? <p>¿Eliminar «{item?.name}» del catálogo?</p> : <>
         <p className="kp-muted">Completa los datos del {kind === "colors" ? "color" : "registro"}.</p>
         <label>Nombre<input required maxLength={kind === "categories" ? 80 : 40} value={name} onChange={event => setName(event.target.value)} placeholder={kind === "colors" ? "Ej. Azul marino" : kind === "sizes" ? "Ej. XL" : "Ej. Polos"} /></label>
         {kind === "categories" && <label>Descripción<textarea rows={2} maxLength={500} placeholder="Ej. Línea casual" value={details} onChange={event => setDetails(event.target.value)} /></label>}
@@ -123,7 +102,7 @@ function CatalogModal({ title, kind, mode, item, description, onClose, onSubmit 
           <input type="color" aria-label="Tono del color" value={/^#[0-9a-f]{6}$/i.test(hex) ? hex : "#000000"} onChange={event => setHex(event.target.value)} /></span></label>}
       </>}
       {error && <p role="alert">{error}</p>}
-      <footer><button type="button" onClick={onClose}>Cancelar</button><button className="kp-primary" disabled={!remove && !name.trim()}>{remove ? "Eliminar" : "Guardar"}</button></footer>
+      <footer><button type="button" onClick={onClose}>Cancelar</button><button className="kp-primary" disabled={saving || (!remove && !name.trim())}>{remove ? "Eliminar" : "Guardar"}</button></footer>
     </form>
   </dialog>;
 }

@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 
 export function CategoryPicker({ value, options, onSelect, onCreate }: {
   value: string; options: string[]; onSelect: (value: string) => void;
-  onCreate: (name: string, description: string) => boolean;
+  onCreate: (name: string, description: string) => Promise<boolean>;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -17,7 +17,8 @@ export function CategoryPicker({ value, options, onSelect, onCreate }: {
   const [query, setQuery] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const normalize = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const filtered = options.filter(item => normalize(item).includes(normalize(query.trim())));
 
@@ -62,7 +63,7 @@ export function CategoryPicker({ value, options, onSelect, onCreate }: {
       <input ref={search} aria-label="Buscar categoría" placeholder="Buscar categoría…" value={query}
         onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter") event.preventDefault(); }} />
       <button type="button" className="kp-category-create" onClick={() => {
-        setName(""); setDescription(""); setError(false); setOpen(false); setCreating(true);
+        setName(""); setDescription(""); setError(""); setOpen(false); setCreating(true);
       }}><Plus size={16} /> Nueva categoría</button>
       <div className="kp-category-options">
         {filtered.map(item => <button type="button" aria-pressed={item === value} key={item} onClick={() => {
@@ -73,12 +74,15 @@ export function CategoryPicker({ value, options, onSelect, onCreate }: {
     </div>}
     {creating && createPortal(<dialog ref={modal} className="kp kp-attribute-modal kp-category-modal" aria-labelledby="kp-new-category"
       onCancel={event => { event.preventDefault(); setCreating(false); }}>
-      <form onSubmit={event => {
+      <form onSubmit={async event => {
         event.preventDefault();
         event.stopPropagation();
-        if (!name.trim()) return;
-        if (onCreate(name.trim(), description.trim())) setCreating(false);
-        else setError(true);
+        if (!name.trim() || saving) return;
+        setSaving(true);
+        try {
+        if (await onCreate(name.trim(), description.trim())) setCreating(false);
+        else setError("No se pudo guardar la categoría.");
+        } catch (error) { setError(error instanceof Error ? error.message : "No se pudo guardar."); } finally { setSaving(false); }
       }}>
         <header className="kp-between"><h2 id="kp-new-category">Nueva categoría</h2>
           <button type="button" aria-label="Cerrar categoría" onClick={() => setCreating(false)}><X size={16} /></button>
@@ -86,9 +90,9 @@ export function CategoryPicker({ value, options, onSelect, onCreate }: {
         <p className="kp-muted">Completa los datos para crear una nueva categoría.</p>
         <label>Nombre<input required maxLength={80} placeholder="Ej. Polos" value={name} onChange={event => setName(event.target.value)} /></label>
         <label>Descripción<textarea rows={2} maxLength={500} placeholder="Ej. Línea casual" value={description} onChange={event => setDescription(event.target.value)} /></label>
-        {error && <p role="alert">No se pudo guardar la categoría en el navegador.</p>}
+        {error && <p role="alert">{error}</p>}
         <footer><button type="button" onClick={() => setCreating(false)}>Cancelar</button>
-          <button className="kp-primary" disabled={!name.trim()}>Guardar</button></footer>
+          <button className="kp-primary" disabled={saving || !name.trim()}>Guardar</button></footer>
       </form>
     </dialog>, document.body)}
   </div>;

@@ -41,8 +41,8 @@ export function MediaDrawer({ image, galleries, colors, onClose, onSave }: {
 
   async function upload(file: File, color: string | null, position: number) {
     setError("");
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || !file.size || file.size > 1024 * 1024) {
-      setError("Selecciona un JPG, PNG o WebP de hasta 1 MB.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || !file.size || file.size > 5 * 1024 * 1024) {
+      setError("Selecciona un JPG, PNG o WebP de hasta 5 MB.");
       return;
     }
     setBusy(true);

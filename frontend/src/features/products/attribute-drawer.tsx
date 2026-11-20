@@ -22,7 +22,7 @@ export function AttributeDrawer({ initialKind, options, selected, onToggle, onCr
   options: Record<AttributeKind, Attribute[]>;
   selected: Record<AttributeKind, string[]>;
   onToggle: (kind: AttributeKind, name: string) => void;
-  onCreate: (kind: AttributeKind, value: Attribute) => boolean;
+  onCreate: (kind: AttributeKind, value: Attribute) => Promise<boolean>;
   onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -57,17 +57,22 @@ export function AttributeDrawer({ initialKind, options, selected, onToggle, onCr
     return () => modal.close();
   }, [creating]);
 
-  function create() {
+  const [saving, setSaving] = useState(false);
+  async function create() {
+    if (saving) return;
+    setSaving(true);
+    try {
     const value = name.trim();
     if (!value) { setError("Escribe un nombre."); return; }
     const existing = options[kind].find(item => normalize(item.name) === normalize(value));
     if (existing) {
       if (!selected[kind].includes(existing.name)) onToggle(kind, existing.name);
-    } else if (!onCreate(kind, { name: value, ...(kind === "colors" ? { hex } : {}) })) {
+    } else if (!await onCreate(kind, { name: value, ...(kind === "colors" ? { hex } : {}) })) {
       setError("No se pudo guardar el atributo en el navegador.");
       return;
     }
     setCreating(false); setName(""); setQuery(""); setPage(0); setError("");
+    } catch (error) { setError(error instanceof Error ? error.message : "No se pudo guardar."); } finally { setSaving(false); }
   }
 
   return <dialog className="kp kp-drawer" ref={dialog} aria-labelledby="kp-attributes-title"
@@ -100,7 +105,7 @@ export function AttributeDrawer({ initialKind, options, selected, onToggle, onCr
             <input type="color" aria-label="Tono del color" value={/^#[0-9a-f]{6}$/i.test(hex) ? hex : "#000000"} onChange={event => setHex(event.target.value)} />
           </span></label>}
           {error && <small role="alert">{error}</small>}
-          <footer><button type="button" onClick={() => setCreating(false)}>Cancelar</button><button className="kp-primary" disabled={!name.trim()}>Guardar</button></footer>
+          <footer><button type="button" onClick={() => setCreating(false)}>Cancelar</button><button className="kp-primary" disabled={saving || !name.trim()}>Guardar</button></footer>
         </form>
       </dialog>}
       <div className="kp-selected kp-chips">

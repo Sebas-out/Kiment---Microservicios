@@ -35,7 +35,7 @@ export const navigation: readonly NavigationGroup[] = [
     { id: "colores", label: "Colores", icon: Palette, href: "/colores", anyPermission: ["PRODUCT_READ", "VARIANT_WRITE"] },
   ] },
   { id: "inventario", label: "Stock", items: [
-    { id: "movimientos", label: "Movimientos", icon: Boxes, href: "/movimientos", anyPermission: ["MOVEMENT_READ", "STOCK_READ"] },
+    { id: "movimientos", label: "Movimientos", icon: Boxes, href: "/movimientos", permission: "MOVEMENT_READ" },
     { id: "traspasos", label: "Traspasos", icon: ArrowLeftRight, href: "/traspasos", permission: "STOCK_READ" },
   ] },
   { id: "reportes", label: "Reportes", items: [
