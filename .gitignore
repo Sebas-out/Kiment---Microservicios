@@ -1,12 +1,29 @@
-target/
-.env
-.env.*
-!.env.example
-.idea/
-.vscode/
-*.iml
-*.log
-*.pem
-*.key
-secrets/
+# Node / Next.js (frontend)
+**/node_modules/
+**/.next/
+**/.next*/
+**/*.tsbuildinfo
+
+# Java / Maven (backend)
+**/target/
+**/*.iml
+**/*.log
+**/.idea/
+**/.vscode/
+
+# Entorno, secretos y certificados
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.prod.example
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/trust/
+**/secrets/
+
+# Datos locales y respaldos (sin ignorar paquetes Java como ports/storage/)
 /storage/
+/backend/*/storage/
+/backend/*/backups/

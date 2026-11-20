@@ -1,0 +1,58 @@
+name: Desplegar SVC-09 en Docker
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: kiments-auth-api-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ACR_NAME: ${{ vars.ACR_NAME }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      APP_NAME: kiments-auth-aca
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Construir la imagen del backend
+        run: |
+          : "${ACR_NAME:?Falta la variable ACR_NAME en GitHub}"
+          : "${AZURE_RESOURCE_GROUP:?Falta la variable AZURE_RESOURCE_GROUP en GitHub}"
+          docker build --platform linux/amd64 \
+            --file backend/kiments-auth-service/deploy/Dockerfile \
+            --tag "kiments-auth-service:$GITHUB_SHA" \
+            backend/kiments-auth-service
+
+      - name: Iniciar sesión en Azure con OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D13F4267B6D74B03B26C53FE92C3E115 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BF4D988F5DAF436BB949696B87CD1B0B }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_7A4BD622393745D1A68FDF76166D6881 }}
+
+      - name: Publicar la imagen y actualizar Container Apps
+        run: |
+          registry="$(az acr show --name "$ACR_NAME" --query loginServer --output tsv)"
+          : "${registry:?Azure no devolvió el servidor del registro}"
+          image="$registry/kiments-auth-service:$GITHUB_SHA"
+
+          az acr login --name "$ACR_NAME"
+          docker tag "kiments-auth-service:$GITHUB_SHA" "$image"
+          docker push "$image"
+
+          az containerapp update \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$APP_NAME" \
+            --image "$image" \
+            --query properties.latestRevisionName \
+            --output tsv
