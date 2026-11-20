@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
-  distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next-build",
+  distDir: process.env.NODE_ENV === "development" ? (process.env.KIMENTS_FIXTURE_PREVIEW === "1" ? ".next-runtime/catalog-preview" : ".next-dev") : ".next-build",
   experimental: { cpus: 1, webpackBuildWorker: false },
   turbopack: { root: process.cwd() },
   async headers() {

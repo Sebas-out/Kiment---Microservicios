@@ -1,4 +1,6 @@
 "use client";
+
+import { Pagination } from "@/components/admin/pagination";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Pencil, Plus, RefreshCw, Shield, Building2, ChevronRight, Search, UserRoundCheck, UserRoundX, UsersRound } from "lucide-react";
@@ -94,7 +96,7 @@ export function Users({ actorId, permissions }: { actorId: string; permissions: 
         </table>
       </div>
       {data && !data.content.length && <div className="ku-empty"><UsersRound size={32} /><h3>No se encontraron usuarios</h3><p>Prueba con otro nombre o ajusta los filtros.</p>{(search || role || enabled || branchId) && <button className="ku-button" onClick={() => { setSearch(""); setRole(""); setEnabled(""); setBranchId(""); setPage(0); }}>Limpiar filtros</button>}</div>}
-      <footer className="ku-pagination"><span>{data ? `${data.totalElements} ${data.totalElements === 1 ? "usuario" : "usuarios"} · ${data.totalPages ? `Página ${page + 1} de ${data.totalPages}` : "Sin resultados"}` : "Listado de usuarios"}</span><div><button className="ku-button" disabled={!data || !page} onClick={() => setPage(v => v - 1)}>Anterior</button><button className="ku-button" disabled={!data || page + 1 >= data.totalPages} onClick={() => setPage(v => v + 1)}>Siguiente</button></div></footer>
+      <Pagination total={data?.totalElements ?? 0} label={data?.totalElements === 1 ? "usuario" : "usuarios"} page={page + 1} pages={data?.totalPages ?? 1} disabled={!data} onChange={value => setPage(value - 1)} />
     </section><UserDetail id={selected} revision={revision} roles={roles} branches={branches.items} permissions={permissions} actorId={actorId} onAction={(kind,user) => setModal({ kind, user })} onClose={() => setSelected(undefined)} /></div>
     {opening && <p role="status" className="ku-muted">Cargando datos para editar…</p>}
     {modal?.kind === "create" && <UserForm roles={roles} permissions={permissions} onClose={() => setModal(undefined)} onSaved={saved} />}

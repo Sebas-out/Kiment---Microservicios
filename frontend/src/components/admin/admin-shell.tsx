@@ -38,8 +38,10 @@ export function AdminShell({ identity, allowedIds, children }: {
   const logoutRef = useRef<HTMLButtonElement>(null);
   const isUsers = pathname === "/usuarios";
   const isAccount = pathname === "/mi-cuenta";
-  const title = isAccount ? "Configuración de Cuenta" : isUsers ? "Usuarios" : pathname === "/sucursales" ? "Sucursales" : "Dashboard";
-  const section = isAccount ? "Configuración" : isUsers || pathname === "/sucursales" ? "Administración" : "Principal";
+  const catalogTitle = navigation.find(group => group.id === "catalogo")?.items.find(item => item.href === pathname)?.label;
+  const stockTitle = navigation.find(group => group.id === "inventario")?.items.find(item => item.href === pathname)?.label;
+  const title = stockTitle ?? catalogTitle ?? ( isAccount ? "Configuración de Cuenta" : isUsers ? "Usuarios" : pathname === "/sucursales" ? "Sucursales" : "Dashboard");
+  const section = stockTitle ? "Stock" : catalogTitle ? "Catálogo" : isAccount ? "Configuración" : isUsers || pathname === "/sucursales" ? "Administración" : "Principal";
   const fullName = `${identity.firstName} ${identity.lastName}`;
   const filteredGroups = navigation.map(group => ({
     ...group, items: group.items.filter(item => allowedIds.includes(item.id) &&

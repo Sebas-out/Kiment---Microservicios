@@ -15,10 +15,11 @@ Abrir http://localhost:3000. Para verificar producción: `npm run build`, luego 
 
 ```dotenv
 AUTH_API_URL=http://localhost:8080
+CATALOG_API_URL=http://localhost:8082
 APP_ORIGIN=http://localhost:3000
 ```
 
-Ambas variables son privadas. El backend recibe llamadas únicamente desde Next.js. En producción se requiere HTTPS hacia el servicio, salvo loopback para la prueba local de `npm start`; configurar APP_ORIGIN con el origen público exacto y servir el frontend por HTTPS.
+Las URLs de los servicios son privadas; no llevan el prefijo NEXT_PUBLIC_. El backend recibe llamadas únicamente desde Next.js. En producción se requiere HTTPS hacia el servicio, salvo loopback para la prueba local de `npm start`; configurar APP_ORIGIN con el origen público exacto y servir el frontend por HTTPS.
 
 Backend independiente: `C:\Users\Bryan\Downloads\kiments-auth-service`. Desde una terminal con su JDK 21 y sus variables de PostgreSQL/RSA **ya configuradas**, ejecutar ` .\mvnw.cmd spring-boot:run` o el JAR existente. Consultar su README para las variables. Mantener desactivados los flags de bootstrap; esta etapa no crea cuentas, modifica el backend ni administra PostgreSQL.
 
@@ -157,3 +158,8 @@ El servicio localhost:8080 rechazó la conexión en esta ejecución. Quedan pend
 Validación: `npm test` 61/61, `npm run test:account` 23/23, `npm run test:users` 30/30, `npm run test:branches` 45/45, TypeScript, ESLint y build correctos. `test:account` requiere un build previo y usa un servidor en memoria en 127.0.0.1; nunca apunta a PostgreSQL. Revisión visual en escritorio y móvil con el mismo entorno aislado.
 
 Para comprobar contra el entorno real después de que el responsable aplique V6: inicia Spring Boot y el frontend con la configuración local existente, entra con tu cuenta y navega a Configuración → Mi cuenta. Verifica la foto existente o las iniciales y su coincidencia con topbar. Solo con autorización explícita o en una base aislada, carga un JPG/PNG válido, recarga, reemplázalo y elimina la foto para verificar persistencia y sincronización. Esta etapa no aplica migraciones ni ejecuta escrituras reales.
+
+
+## Integración de Catálogo e Inventario
+
+Ver [INTEGRACION-CATALOGO.md](INTEGRACION-CATALOGO.md) para los endpoints conectados, pruebas reales y bloqueos detectados. Catálogo usa `/api/catalog` en el BFF y la misma sesión HttpOnly de Autenticación. No guarda productos, atributos ni movimientos en localStorage.
