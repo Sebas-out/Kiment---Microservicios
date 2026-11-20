@@ -1,0 +1,82 @@
+server:
+  port: ${PORT:8082}
+  shutdown: graceful
+
+spring:
+  application:
+    name: kiments-catalog-inventory-service
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:kiments_db}?currentSchema=catalog_inventory&sslmode=${DB_SSLMODE:prefer}}
+    username: ${DB_USER:kiments_catalog}
+    password: ${DB_PASSWORD:}
+    hikari:
+      pool-name: KimentsCatalogHikariPool
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 10000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: catalog_inventory
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    schemas: catalog_inventory
+    default-schema: catalog_inventory
+    table: flyway_schema_history
+    baseline-on-migrate: false
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8080/api/v1/auth/jwks}
+
+app:
+  auth:
+    issuer: ${AUTH_ISSUER:http://localhost:8080}
+    audience: ${AUTH_AUDIENCE:kiments-api,kiments-auth}
+    me-uri: ${AUTH_ME_URI:http://localhost:8080/api/v1/auth/me}
+    validate-session-remotely: ${AUTH_VALIDATE_SESSION_REMOTELY:false}
+    connect-timeout-ms: 3000
+    read-timeout-ms: 5000
+  storage:
+    type: LOCAL
+    local:
+      base-dir: ${STORAGE_LOCAL_DIR:./storage/catalog-images}
+    max-file-size-bytes: 5242880
+  cors-origins: ${CORS_ORIGINS:http://localhost:3000}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
