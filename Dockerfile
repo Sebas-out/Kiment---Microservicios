@@ -10,7 +10,9 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Crear usuario sin privilegios para ejecución segura
-RUN addgroup -S kiments && adduser -S kiments -G kiments
+RUN addgroup -S kiments && adduser -S kiments -G kiments \
+    && mkdir -p /app/storage/catalog-images \
+    && chown -R kiments:kiments /app
 USER kiments:kiments
 
 # Copiar artefacto empaquetado
